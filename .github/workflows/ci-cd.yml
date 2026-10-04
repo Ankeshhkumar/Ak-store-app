@@ -186,8 +186,14 @@ jobs:
           git config --local user.name "GitOps Bot"
 
           if ! git diff --quiet "src/${SERVICE}/chart/values.yaml"; then
-            git pull --rebase origin main
+            # Stage changes first before pulling
             git add "src/${SERVICE}/chart/values.yaml"
+            
+            # Stash any uncommitted changes, pull, then reapply
+            git stash
+            git pull --rebase origin main
+            git stash pop || true
+            
             git commit -m "🚀 Update ${SERVICE} Helm chart to ${TAG} - ECR: retail-store-${SERVICE} - Commit: ${{ github.sha }}"
 
             # Push with retry logic to main branch
@@ -244,3 +250,4 @@ jobs:
           else
             echo "ℹ️ **Status:** No services changed - no deployment needed" >> $GITHUB_STEP_SUMMARY
           fi
+
